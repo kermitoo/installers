@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-# OS VERSION: CentOS 6.4+ Minimal
+# OS VERSION: CentOS 7 + Minimal
 # ARCH: 32bit + 64bit
 
 ZPX_VERSION=10.1.1
 
-# Official ZPanel Automated Installation Script
+# Official ZPanel Automated Installation Script Beta
 # =============================================
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -48,21 +48,21 @@ then
 exit 
 fi
 
-# Ensure the installer is launched and can only be launched on CentOs 6.4
+# Ensure the installer is launched and can only be launched on CentOs 7
 BITS=$(uname -m | sed 's/x86_//;s/i[3-6]86/32/')
 if [ -f /etc/centos-release ]; then
   OS="CentOs"
-  VER=$(cat /etc/centos-release | sed 's/^.*release //;s/ (Fin.*$//')
+  VER=$(rpm -qa \*-release | grep -Ei "oracle|redhat|centos" | cut -d"-" -f3)
 else
   OS=$(uname -s)
   VER=$(uname -r)
 fi
 echo "Detected : $OS  $VER  $BITS"
-#warning the last version of centos and 6.x
-if [ "$OS" = "CentOs" ] && [ "$VER" = "6.0" ] || [ "$VER" = "6.1" ] || [ "$VER" = "6.2" ] || [ "$VER" = "6.3" ] || [ "$VER" = "6.4" ] || [ "$VER" = "6.5" ] ||[ "$VER" = "6.6" ]  ; then
+#warning the last version of centos and 7.x
+if [ "$OS" = "CentOs" ] && [ "$VER" = "7" ] ; then
   echo "Ok."
 else
-  echo "Sorry, this installer only supports the installation of ZPanel on CentOS 6.x."
+  echo "Sorry, this installer only supports the installation of ZPanel on CentOS 7.x."
   exit 1;
 fi
 
@@ -84,20 +84,20 @@ passwordgen() {
 }
 
 # Display the 'welcome' splash/user warning info..
-echo -e "##############################################################"
-echo -e "# Welcome to the Official ZPanelX Installer for CentOS 6.4   #"
-echo -e "#                                                            #"
-echo -e "# Please make sure your VPS provider hasn't pre-installed    #"
-echo -e "# any packages required by ZPanelX.                          #"
-echo -e "#                                                            #"
-echo -e "# If you are installing on a physical machine where the OS   #"
-echo -e "# has been installed by yourself please make sure you only   #"
-echo -e "# installed CentOS with no extra packages.                   #"
-echo -e "#                                                            #"
-echo -e "# If you selected additional options during the CentOS       #"
-echo -e "# install please consider reinstalling without them.         #"
-echo -e "#                                                            #"
-echo -e "##############################################################"
+echo -e "###################################################################"
+echo -e "# Welcome to the Official ZPanelX Beta Installer for CentOS 7     #"
+echo -e "#                                                                 #"
+echo -e "#    Please make sure your VPS provider hasn't pre-installed      #"
+echo -e "#    any packages required by ZPanelX.                            #"
+echo -e "#                                                                 #"
+echo -e "#    If you are installing on a physical machine where the OS     #"
+echo -e "#    has been installed by yourself please make sure you only     #"
+echo -e "#    installed CentOS with no extra packages.                     #"
+echo -e "#                                                                 #"
+echo -e "#    If you selected additional options during the CentOS         #"
+echo -e "#    install please consider reinstalling without them.           #"
+echo -e "#                                                                 #"
+echo -e "###################################################################"
 
 # Set some installation defaults/auto assignments
 fqdn=`/bin/hostname`
@@ -217,16 +217,16 @@ yum -y install sudo wget vim make zip unzip git chkconfig
 
 # We now clone the ZPX software from GitHub
 echo "Downloading ZPanel, Please wait, this may take several minutes, the installer will continue after this is complete!"
-git clone https://github.com/zpanel/zpanelx.git
+git clone --branch 10.1.1 https://github.com/zpanel/zpanelx.git
 cd zpanelx/
-git checkout $ZPX_VERSION
 mkdir ../zp_install_cache/
 git checkout-index -a -f --prefix=../zp_install_cache/
 cd ../zp_install_cache/
 
 # Lets pull in all the required updates etc.
 rpm --import https://fedoraproject.org/static/0608B895.txt
-cp etc/build/config_packs/centos_6_3/yum.repos.d/epel.repo /etc/yum.repos.d/epel.repo
+yum -y install http://dl.fedoraproject.org/pub/epel/beta/7/x86_64/epel-release-7-0.2.noarch.rpm
+yum -y install http://rpms.famillecollet.com/enterprise/remi-release-7.rpm
 
 # problem upgrade centos 6.2 with 6.5 pacquet deteted as repo qpid-cpp-client
 yum -y remove qpid-cpp-client
@@ -235,7 +235,19 @@ yum -y update
 yum -y upgrade
 
 # Install required software and dependencies required by ZPanel.
-yum -y install ld-linux.so.2 libbz2.so.1 libdb-4.7.so libgd.so.2 httpd php php-suhosin php-devel php-gd php-mbstring php-mcrypt php-intl php-imap php-mysql php-xml php-xmlrpc curl curl-devel perl-libwww-perl libxml2 libxml2-devel mysql-server zip webalizer gcc gcc-c++ httpd-devel at make mysql-devel bzip2-devel postfix postfix-perl-scripts bash-completion dovecot dovecot-mysql dovecot-pigeonhole mysql-server proftpd proftpd-mysql bind bind-utils bind-libs
+yum -y install --enablerepo=remi ld-linux.so.2 libbz2.so.1 libdb-4.7.so libgd.so.2 httpd php php-devel php-gd php-mbstring php-mcrypt php-intl php-imap php-mysql php-xml php-xmlrpc curl curl-devel perl-libwww-perl libxml2 libxml2-devel mysql mysql-server zip webalizer gcc gcc-c++ httpd-devel at make mysql-devel bzip2-devel postfix postfix-perl-scripts bash-completion dovecot dovecot-mysql dovecot-pigeonhole mysql-server proftpd proftpd-mysql bind bind-utils bind-libs
+
+
+# install suhosin
+git clone https://github.com/stefanesser/suhosin.git
+cd suhosin
+./configure
+make
+make install
+echo 'extension=suhosin.so' > /etc/php.d/suhosin.ini
+cd ..
+rm -rf suhosin
+
 
 # Generation of random passwords
 password=`passwordgen`;
@@ -266,7 +278,9 @@ ln -s /etc/zpanel/panel/bin/setso /usr/bin/setso
 ln -s /etc/zpanel/panel/bin/setzadmin /usr/bin/setzadmin
 chmod +x /etc/zpanel/panel/bin/zppy
 chmod +x /etc/zpanel/panel/bin/setso
-cp -R /etc/zpanel/panel/etc/build/config_packs/centos_6_3/. /etc/zpanel/configs/
+cp -R /etc/zpanel/panel/etc/build/config_packs/centos_6_5/. /etc/zpanel/configs/
+rm -f rm -f /etc/zpanel/panel/modules/apache_admin/hooks/OnDaemonRun.hook.php
+wget https://github.com/andykimpe/zpanelx/raw/master/modules/apache_admin/hooks/OnDaemonRun.hook.php_u14 -O /etc/zpanel/panel/modules/apache_admin/hooks/OnDaemonRun.hook.php
 # set password after test connexion
 cc -o /etc/zpanel/panel/bin/zsudo /etc/zpanel/configs/bin/zsudo.c
 sudo chown root /etc/zpanel/panel/bin/zsudo
@@ -359,11 +373,10 @@ serverhost=`hostname`
 if ! grep -q "Include /etc/zpanel/configs/apache/httpd.conf" /etc/httpd/conf/httpd.conf; then echo "Include /etc/zpanel/configs/apache/httpd.conf" >> /etc/httpd/conf/httpd.conf; fi
 if ! grep -q "127.0.0.1 "$fqdn /etc/hosts; then echo "127.0.0.1 "$fqdn >> /etc/hosts; fi
 if ! grep -q "apache ALL=NOPASSWD: /etc/zpanel/panel/bin/zsudo" /etc/sudoers; then echo "apache ALL=NOPASSWD: /etc/zpanel/panel/bin/zsudo" >> /etc/sudoers; fi
-sed -i 's|DocumentRoot "/var/www/html"|DocumentRoot "/etc/zpanel/panel"|' /etc/httpd/conf/httpd.conf
+sed -i 's|<Directory "/opt/rh/httpd24/root/var/www">|<Directory "/etc/zpanel/panel">|' /etc/httpd/conf/httpd.conf
 chown -R apache:apache /var/zpanel/temp/
 #Set keepalive on (default is off)
 sed -i "s|KeepAlive Off|KeepAlive On|" /etc/httpd/conf/httpd.conf
-
 # PHP specific installation tasks...
 sed -i "s|;date.timezone =|date.timezone = $tz|" /etc/php.ini
 sed -i "s|;upload_tmp_dir =|upload_tmp_dir = /var/zpanel/temp/|" /etc/php.ini
@@ -412,6 +425,7 @@ ln -s /etc/zpanel/configs/roundcube/db.inc.php /etc/zpanel/panel/etc/apps/webmai
 
 # Enable system services and start/restart them as required.
 chkconfig httpd on
+chkconfig php-fpm on
 chkconfig postfix on
 chkconfig dovecot on
 chkconfig crond on
@@ -419,20 +433,25 @@ chkconfig mysqld on
 chkconfig named on
 chkconfig proftpd on
 service httpd start
+service php-fpm start
 service postfix restart
 service dovecot start
 service crond start
-service mysqld restart
+service mysqld stop
+rm -f /var/lib/mysql/mysql.sock
+service mysqld start
 service named start
 service proftpd start
 service atd start
-php /etc/zpanel/panel/bin/daemon.php
+php -f /etc/zpanel/panel/bin/daemon.php
 # restart all service
-service httpd restart
+service httpd24-httpd restart
 service postfix restart
 service dovecot restart
 service crond restart
-service mysqld restart
+service mysqld stop
+rm -f /var/lib/mysql/mysql.sock
+service mysqld start
 service named restart
 service proftpd restart
 service atd restart
@@ -467,4 +486,6 @@ read -e -p "Restart your server now to complete the install (y/n)? " rsn
 		[Nn]* ) exit;
 	esac
 done
+service mysqld stop
+rm -f /var/lib/mysql/mysql.sock
 shutdown -r now

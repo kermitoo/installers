@@ -5,7 +5,7 @@
 
 ZPX_VERSION=10.1.1
 
-# Official ZPanel Automated Installation Script
+# Official ZPanel Automated Installation Script Beta using apache 2.4 php 5.5 with scl
 # =============================================
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -84,20 +84,20 @@ passwordgen() {
 }
 
 # Display the 'welcome' splash/user warning info..
-echo -e "##############################################################"
-echo -e "# Welcome to the Official ZPanelX Installer for CentOS 6.4   #"
-echo -e "#                                                            #"
-echo -e "# Please make sure your VPS provider hasn't pre-installed    #"
-echo -e "# any packages required by ZPanelX.                          #"
-echo -e "#                                                            #"
-echo -e "# If you are installing on a physical machine where the OS   #"
-echo -e "# has been installed by yourself please make sure you only   #"
-echo -e "# installed CentOS with no extra packages.                   #"
-echo -e "#                                                            #"
-echo -e "# If you selected additional options during the CentOS       #"
-echo -e "# install please consider reinstalling without them.         #"
-echo -e "#                                                            #"
-echo -e "##############################################################"
+echo -e "###################################################################"
+echo -e "# Welcome to the Official ZPanelX Beta Installer for CentOS 6.4   #"
+echo -e "#                                                                 #"
+echo -e "#    Please make sure your VPS provider hasn't pre-installed      #"
+echo -e "#    any packages required by ZPanelX.                            #"
+echo -e "#                                                                 #"
+echo -e "#    If you are installing on a physical machine where the OS     #"
+echo -e "#    has been installed by yourself please make sure you only     #"
+echo -e "#    installed CentOS with no extra packages.                     #"
+echo -e "#                                                                 #"
+echo -e "#    If you selected additional options during the CentOS         #"
+echo -e "#    install please consider reinstalling without them.           #"
+echo -e "#                                                                 #"
+echo -e "###################################################################"
 
 # Set some installation defaults/auto assignments
 fqdn=`/bin/hostname`
@@ -217,9 +217,8 @@ yum -y install sudo wget vim make zip unzip git chkconfig
 
 # We now clone the ZPX software from GitHub
 echo "Downloading ZPanel, Please wait, this may take several minutes, the installer will continue after this is complete!"
-git clone https://github.com/zpanel/zpanelx.git
+git clone --branch 10.1.1 https://github.com/zpanel/zpanelx.git
 cd zpanelx/
-git checkout $ZPX_VERSION
 mkdir ../zp_install_cache/
 git checkout-index -a -f --prefix=../zp_install_cache/
 cd ../zp_install_cache/
@@ -227,6 +226,10 @@ cd ../zp_install_cache/
 # Lets pull in all the required updates etc.
 rpm --import https://fedoraproject.org/static/0608B895.txt
 cp etc/build/config_packs/centos_6_3/yum.repos.d/epel.repo /etc/yum.repos.d/epel.repo
+yum -y install http://rpms.famillecollet.com/enterprise/remi-release-6.rpm
+
+# add lamp scl depot
+wget https://github.com/zpanel/installers/raw/master/install/beta/CentOS_6/lamp_scl.repo -P /etc/yum.repos.d
 
 # problem upgrade centos 6.2 with 6.5 pacquet deteted as repo qpid-cpp-client
 yum -y remove qpid-cpp-client
@@ -235,7 +238,20 @@ yum -y update
 yum -y upgrade
 
 # Install required software and dependencies required by ZPanel.
-yum -y install ld-linux.so.2 libbz2.so.1 libdb-4.7.so libgd.so.2 httpd php php-suhosin php-devel php-gd php-mbstring php-mcrypt php-intl php-imap php-mysql php-xml php-xmlrpc curl curl-devel perl-libwww-perl libxml2 libxml2-devel mysql-server zip webalizer gcc gcc-c++ httpd-devel at make mysql-devel bzip2-devel postfix postfix-perl-scripts bash-completion dovecot dovecot-mysql dovecot-pigeonhole mysql-server proftpd proftpd-mysql bind bind-utils bind-libs
+yum -y install --enablerepo=remi ld-linux.so.2 libbz2.so.1 libdb-4.7.so libgd.so.2 httpd24 httpd24-httpd php55 php55-php php55-php-devel php55-php-gd php55-php-mbstring php55-php-mcrypt php55-php-intl php55-php-imap php55-php-mysql php55-php-xml php55-php-xmlrpc curl curl-devel perl-libwww-perl libxml2 libxml2-devel mysql mysql-server zip webalizer gcc gcc-c++ httpd24-httpd-devel at make mysql-devel bzip2-devel postfix postfix-perl-scripts bash-completion dovecot dovecot-mysql dovecot-pigeonhole mysql-server proftpd proftpd-mysql bind bind-utils bind-libs
+
+
+# install suhosin
+git clone https://github.com/stefanesser/suhosin.git
+cd suhosin
+scl enable php55 "phpize"
+scl enable php55 "./configure"
+scl enable php55 "make"
+scl enable php55 "make install"
+cp suhosin.ini /opt/rh/php55/root/etc/php.d
+cd ..
+rm -rf suhosin
+
 
 # Generation of random passwords
 password=`passwordgen`;
@@ -266,7 +282,9 @@ ln -s /etc/zpanel/panel/bin/setso /usr/bin/setso
 ln -s /etc/zpanel/panel/bin/setzadmin /usr/bin/setzadmin
 chmod +x /etc/zpanel/panel/bin/zppy
 chmod +x /etc/zpanel/panel/bin/setso
-cp -R /etc/zpanel/panel/etc/build/config_packs/centos_6_3/. /etc/zpanel/configs/
+cp -R /etc/zpanel/panel/etc/build/config_packs/centos_6_5/. /etc/zpanel/configs/
+rm -f rm -f /etc/zpanel/panel/modules/apache_admin/hooks/OnDaemonRun.hook.php
+wget https://github.com/andykimpe/zpanelx/raw/master/modules/apache_admin/hooks/OnDaemonRun.hook.php_u14 -O /etc/zpanel/panel/modules/apache_admin/hooks/OnDaemonRun.hook.php
 # set password after test connexion
 cc -o /etc/zpanel/panel/bin/zsudo /etc/zpanel/configs/bin/zsudo.c
 sudo chown root /etc/zpanel/panel/bin/zsudo
@@ -356,22 +374,21 @@ chmod -R 644 /var/zpanel/logs/proftpd
 serverhost=`hostname`
 
 # Apache HTTPD specific installation tasks...
-if ! grep -q "Include /etc/zpanel/configs/apache/httpd.conf" /etc/httpd/conf/httpd.conf; then echo "Include /etc/zpanel/configs/apache/httpd.conf" >> /etc/httpd/conf/httpd.conf; fi
+if ! grep -q "Include /etc/zpanel/configs/apache/httpd.conf" /opt/rh/httpd24/root/etc/httpd/conf/httpd.conf; then echo "Include /etc/zpanel/configs/apache/httpd.conf" >> /opt/rh/httpd24/root/etc/httpd/conf/httpd.conf; fi
 if ! grep -q "127.0.0.1 "$fqdn /etc/hosts; then echo "127.0.0.1 "$fqdn >> /etc/hosts; fi
 if ! grep -q "apache ALL=NOPASSWD: /etc/zpanel/panel/bin/zsudo" /etc/sudoers; then echo "apache ALL=NOPASSWD: /etc/zpanel/panel/bin/zsudo" >> /etc/sudoers; fi
-sed -i 's|DocumentRoot "/var/www/html"|DocumentRoot "/etc/zpanel/panel"|' /etc/httpd/conf/httpd.conf
+sed -i 's|<Directory "/opt/rh/httpd24/root/var/www">|<Directory "/etc/zpanel/panel">|' /opt/rh/httpd24/root/etc/httpd/conf/httpd.conf
 chown -R apache:apache /var/zpanel/temp/
 #Set keepalive on (default is off)
-sed -i "s|KeepAlive Off|KeepAlive On|" /etc/httpd/conf/httpd.conf
-
+sed -i "s|KeepAlive Off|KeepAlive On|" /opt/rh/httpd24/root/etc/httpd/conf/httpd.conf
 # PHP specific installation tasks...
-sed -i "s|;date.timezone =|date.timezone = $tz|" /etc/php.ini
-sed -i "s|;upload_tmp_dir =|upload_tmp_dir = /var/zpanel/temp/|" /etc/php.ini
+sed -i "s|;date.timezone =|date.timezone = $tz|" /opt/rh/php55/root/etc/php.ini
+sed -i "s|;upload_tmp_dir =|upload_tmp_dir = /var/zpanel/temp/|" /opt/rh/php55/root/etc/php.ini
 #Disable php signature in headers to hide it from hackers
-sed -i "s|expose_php = On|expose_php = Off|" /etc/php.ini
+sed -i "s|expose_php = On|expose_php = Off|" /opt/rh/php55/root/etc/php.ini
 
 # Permissions fix for Apache and ProFTPD (to enable them to play nicely together!)
-if ! grep -q "umask 002" /etc/sysconfig/httpd; then echo "umask 002" >> /etc/sysconfig/httpd; fi
+if ! grep -q "umask 002" /etc/sysconfig/httpd; then echo "umask 002" >> /opt/rh/httpd24/root/etc/sysconfig/httpd; fi
 if ! grep -q "127.0.0.1 $serverhost" /etc/hosts; then echo "127.0.0.1 $serverhost" >> /etc/hosts; fi
 usermod -a -G apache ftpuser
 usermod -a -G ftpgroup apache
@@ -411,14 +428,16 @@ ln -s /etc/zpanel/configs/roundcube/config.inc.php /etc/zpanel/panel/etc/apps/we
 ln -s /etc/zpanel/configs/roundcube/db.inc.php /etc/zpanel/panel/etc/apps/webmail/config/db.inc.php
 
 # Enable system services and start/restart them as required.
-chkconfig httpd on
+chkconfig httpd24-httpd on
+chkconfig php55-php-fpm on
 chkconfig postfix on
 chkconfig dovecot on
 chkconfig crond on
 chkconfig mysqld on
 chkconfig named on
 chkconfig proftpd on
-service httpd start
+service httpd24-httpd start
+service php55-php-fpm start
 service postfix restart
 service dovecot start
 service crond start
@@ -426,9 +445,22 @@ service mysqld restart
 service named start
 service proftpd start
 service atd start
-php /etc/zpanel/panel/bin/daemon.php
+rm -f /usr/bin/php
+cat > /usr/bin/php <<EOF
+#!/bin/bash
+source /opt/rh/php55/enable
+/opt/rh/php55/root/usr/bin/php "\$@"
+EOF
+chmod +x /usr/bin/php
+cat > /usr/bin/httpd24 <<EOF
+#!/bin/bash
+source /opt/rh/httpd24/enable
+/opt/rh/httpd24/root/usr/sbin/httpd "\$@"
+EOF
+chmod +x /usr/bin/httpd24
+php -f /etc/zpanel/panel/bin/daemon.php
 # restart all service
-service httpd restart
+service httpd24-httpd restart
 service postfix restart
 service dovecot restart
 service crond restart

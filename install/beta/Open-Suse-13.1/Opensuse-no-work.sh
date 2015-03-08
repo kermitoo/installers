@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# OS VERSION: Ubuntu Server 12.04.x LTS
+# OS VERSION: Ubuntu Server 14.04.x LTS
 # ARCH: x32_64
 
 ZPX_VERSION=10.1.1
@@ -8,18 +8,18 @@ ZPX_VERSION=10.1.1
 # Official ZPanel Automated Installation Script
 # =============================================
 #
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
 # First we check if the user is 'root' before allowing installation to commence
@@ -39,45 +39,41 @@ fi
 
 # Lets check for some common packages that we know will affect the installation/operating of ZPanel.
 # We expect a clean OS so no apache/mySQL/bind/postfix/php!
-if dpkg -s php apache mysql bind postfix dovecot; then
-    echo "You appear to have a server with apache/mysql/bind/postfix already installed; "
-    echo "This installer is designed to install and configure ZPanel on a clean OS "
-    echo "installation only!"
-    echo ""
-    echo "Please re-install your OS before attempting to install using this script."
-    exit
-fi
+#if dpkg -s php apache mysql bind postfix dovecot; then
+#    echo "You appear to have a server with apache/mysql/bind/postfix already installed; "
+#    echo "This installer is designed to install and configure ZPanel on a clean OS "
+#    echo "installation only!"
+#    echo ""
+#    echo "Please re-install your OS before attempting to install using this script."
+#    exit
+#fi
 
-# Ensure the installer is launched and can only be launched on Ubuntu 12.04
-BITS=$(uname -m | sed 's/x86_//;s/i[3-6]86/32/')
-if [ -f /etc/lsb-release ]; then
-  OS=$(cat /etc/lsb-release | grep DISTRIB_ID | sed 's/^.*=//')
-  VER=$(cat /etc/lsb-release | grep DISTRIB_RELEASE | sed 's/^.*=//')
-else
-  OS=$(uname -s)
-  VER=$(uname -r)
-fi
-echo "Detected : $OS  $VER  $BITS"
-if [ "$OS" = "Ubuntu" ] && [ "$VER" = "12.04" ]; then
-  echo "Ok."
-else
-  echo "Sorry, this installer only supports the installation of ZPanel on Ubuntu 12.04."
-  exit 1;
-fi
+# Ensure the installer is launched and can only be launched on Ubuntu 14.04
+#BITS=$(uname -m | sed 's/x86_//;s/i[3-6]86/32/')
+#if [ -f /etc/os-release ]; then
+#  OS=$(cat /etc/os-release | grep ID_LIKE | sed 's/^.*=//')
+#  VER=`cat /etc/SuSE-release | tr "\n" ' '| sed s/VERSION.*//`
+#else
+#  OS=$(uname -s)
+#  VER=$(uname -r)
+#fi
+#echo "Detected : $OS $VER $BITS"
+#if [ "$OS" = ""suse"" ] && [ "$VER" = "openSUSE 13.1 (x86_64)" ]; then
+#  echo "Ok."
+#else
+#  echo "Sorry, this installer only supports the installation of ZPanel on Opensuse 13.1 x86_64 online"
+#  exit 1;
+#fi
 
-# Set custom logging methods so we create a log file in the current working directory.
-logfile=$$.log
-touch $$.log
-exec > >(tee $logfile)
-exec 2>&1
+ZPX_VERSION=10.1.1
 
 # ***************************************
-# * Common installer functions          *
+# * Common installer functions *
 # ***************************************
 
 # Generates random passwords for the 'zadmin' account as well as Postfix and MySQL root account.
 passwordgen() {
-    	 l=$1
+     l=$1
            [ "$l" == "" ] && l=16
           tr -dc A-Za-z0-9 < /dev/urandom | head -c ${l} | xargs
 }
@@ -85,19 +81,20 @@ passwordgen() {
 # Display the 'welcome' splash/user warning info..
 echo -e ""
 echo -e "##############################################################"
-echo -e "# Welcome to the Official ZPanelX Installer for Ubuntu       #"
-echo -e "# Server 12.04.x LTS                                         #"
-echo -e "#                                                            #"
-echo -e "# Please make sure your VPS provider hasn't pre-installed    #"
-echo -e "# any packages required by ZPanelX.                          #"
-echo -e "#                                                            #"
-echo -e "# If you are installing on a physical machine where the OS   #"
-echo -e "# has been installed by yourself please make sure you only   #"
-echo -e "# installed Ubuntu Server with no extra packages.            #"
-echo -e "#                                                            #"
-echo -e "# If you selected additional options during the Ubuntu       #"
-echo -e "# install please consider reinstalling without them.         #"
-echo -e "#                                                            #"
+echo -e "# Official ZPanel Automated Installation Script BETA 1 #"
+echo -e "# Welcome to the Official ZPanelX Installer for OpenSuse #"
+echo -e "# Server 13.1 #"
+echo -e "# #"
+echo -e "# Please make sure your VPS provider hasn't pre-installed #"
+echo -e "# any packages required by ZPanelX. #"
+echo -e "# #"
+echo -e "# If you are installing on a physical machine where the OS #"
+echo -e "# has been installed by yourself please make sure you only #"
+echo -e "# installed OpenSuse Server with no extra packages. #"
+echo -e "# #"
+echo -e "# If you selected additional options during the Ubuntu #"
+echo -e "# install please consider reinstalling without them. #"
+echo -e "# #"
 echo -e "##############################################################"
 echo -e ""
 
@@ -109,40 +106,28 @@ publicip=`wget -qO- http://api.zpanelcp.com/ip.txt`
 while true; do
 read -e -p "Would you like to continue (y/n)? " yn
     case $yn in
-		[Yy]* ) break;;
-		[Nn]* ) exit;
-	esac
+[Yy]* ) break;;
+[Nn]* ) exit;
+esac
 done
 
-# We need to disable and remove AppArmor...
-[ -f /etc/init.d/apparmor ]
-if [ $? = "0" ]; then
-    echo -e ""
-    echo -e "Disabling and removing AppArmor, please wait..."
-    /etc/init.d/apparmor stop &> /dev/null
-	update-rc.d -f apparmor remove &> /dev/null
-	apt-get -y remove apparmor &> /dev/null
-	mv /etc/init.d/apparmor /etc/init.d/apparmpr.removed &> /dev/null
-	##after removing AppArmor reboot is not obligatory
-	echo -e "Please restart the server and run the installer again. AppArmor has been removed."
-        #exit
-fi
-
 #a selection list for the time zone is not better now?
-apt-get -yqq update &>/dev/null
-apt-get -yqq install tzdata &>/dev/null
+zypper up &>/dev/null
+zypper lu  &>/dev/null
+yast2 -i timezone &>/dev/null
+echo "echo \$TZ > /etc/timezone" >> /usr/bin/tzselect
 
 # Installer options
 while true; do
-	#echo -e "Find your timezone from : http://php.net/manual/en/timezones.php e.g Europe/London"
-	#read -e -p "Enter your timezone: " -i "Europe/London" tz
-	dpkg-reconfigure tzdata
-	tz=`cat /etc/timezone`
-	echo -e "Enter the FQDN you will use to access ZPanel on your server."
-	echo -e "- It MUST be a sub-domain of you main domain, it MUST NOT be your main domain only. Example: panel.yourdomain.com"
-	echo -e "- Remember that the sub-domain ('panel' in the example) MUST be setup in your DNS nameserver."
-	read -e -p "FQDN for zpanel: " -i $fqdn fqdn
-	read -e -p "Enter the public (external) server IP: " -i $publicip publicip
+#echo -e "Find your timezone from : http://php.net/manual/en/timezones.php e.g Europe/London"
+#read -e -p "Enter your timezone: " -i "Europe/London" tz
+tzselect
+tz=`cat /etc/timezone`
+echo -e "Enter the FQDN you will use to access ZPanel on your server."
+echo -e "- It MUST be a sub-domain of you main domain, it MUST NOT be your main domain only. Example: panel.yourdomain.com"
+echo -e "- Remember that the sub-domain ('panel' in the example) MUST be setup in your DNS nameserver."
+read -e -p "FQDN for zpanel: " -i $fqdn fqdn
+read -e -p "Enter the public (external) server IP: " -i $publicip publicip
     read -e -p "ZPanel is now ready to install, do you wish to continue (y/n)" yn
     case $yn in
         [Yy]* ) break;;
@@ -155,49 +140,10 @@ echo -e ""
 echo -e "# Generating installation log and debug info..."
 uname -a
 echo -e ""
-dpkg --get-selections
-
-# We need to update the enabled Aptitude repositories
-echo -ne "\nUpdating Aptitude Repos: " >/dev/tty
-#if grep -Fxq "deb-src" /etc/apt/sources.list
-#then
-#    echo "sources list up-to-date"
-#else
-#    echo "deb-src http://archive.ubuntu.com/ubuntu precise main" >> /etc/apt/sources.list
-#    echo "deb-src http://archive.ubuntu.com/ubuntu precise-updates main" >> /etc/apt/sources.list
-#    echo "deb-src http://security.ubuntu.com/ubuntu precise-security main" >> /etc/apt/sources.list
-#    echo "deb-src http://archive.ubuntu.com/ubuntu precise universe" >> /etc/apt/sources.list
-#    echo "deb-src http://archive.ubuntu.com/ubuntu precise-updates universe" >> /etc/apt/sources.list
-#fi
-#to avoid compatibility problems have ppa and removes deposits in the outcry over
- mkdir -p "/etc/apt/sources.list.d.save"
-        cp -R "/etc/apt/sources.list.d/*" "/etc/apt/sources.list.d.save" &> /dev/null
-        rm -rf "/etc/apt/sources.list/*"
-        cp "/etc/apt/sources.list" "/etc/apt/sources.list.save"
-cat > /etc/apt/sources.list <<EOF
-#Dépots main restricted
-deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -sc) main restricted
-deb http://security.ubuntu.com/ubuntu $(lsb_release -sc)-security main restricted
-deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -sc)-updates main restricted
- 
-deb-src http://archive.ubuntu.com/ubuntu/ $(lsb_release -sc) main restricted
-deb-src http://archive.ubuntu.com/ubuntu/ $(lsb_release -sc)-updates main restricted
-deb-src http://security.ubuntu.com/ubuntu $(lsb_release -sc)-security main restricted
-#Dépots Universe Multiverse 
-deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -sc) universe multiverse
-deb http://security.ubuntu.com/ubuntu $(lsb_release -sc)-security universe multiverse
-deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -sc)-updates universe multiverse
-
-deb-src http://archive.ubuntu.com/ubuntu/ $(lsb_release -sc) universe multiverse
-deb-src http://security.ubuntu.com/ubuntu $(lsb_release -sc)-security universe multiverse
-deb-src http://archive.ubuntu.com/ubuntu/ $(lsb_release -sc)-updates universe multiverse
-EOF
-
-apt-get update
-
+rpm -qa
 
 # Install some standard utility packages required by the installer and/or ZPX.
-apt-get -y install sudo wget vim make zip unzip git debconf-utils at
+yast2 -i sudo wget vim make zip unzip git
 
 # We now clone the ZPX software from GitHub
 echo "Downloading ZPanel, Please wait, this may take several minutes, the installer will continue after this is complete!"
@@ -209,18 +155,27 @@ git checkout-index -a -f --prefix=../zp_install_cache/
 cd ../zp_install_cache/
 
 # We now update the server software packages.
-apt-get update -yqq
-apt-get upgrade -yqq
+zypper up
+zypper lu
 
 # Install required software and dependencies required by ZPanel.
-# We disable the DPKG prompts before we run the software install to enable fully automated install.
-export DEBIAN_FRONTEND=noninteractive
-apt-get install -qqy mysql-server mysql-server apache2 libapache2-mod-php5 libapache2-mod-bw php5-common php5-suhosin php5-cli php5-mysql php5-gd php5-mcrypt php5-curl php-pear php5-imap php5-xmlrpc php5-xsl db4.7-util zip webalizer build-essential bash-completion dovecot-mysql dovecot-imapd dovecot-pop3d dovecot-common dovecot-managesieved dovecot-lmtpd postfix postfix-mysql libsasl2-modules-sql libsasl2-modules proftpd-mod-mysql bind9 bind9utils
+
+
+yast2 -i at mysql-community-server mysql-community-server-client apache2 php5-mysql php5-bcmath php5-bz2 php5-calendar php5-ctype php5-curl php5-dom php5-ftp php5-gd php5-gettext php5-gmp php5-iconv php5-imap php5-ldap php5-mbstring php5-mcrypt php5-odbc php5-openssl php5-pcntl php5-pgsql php5-posix php5-shmop php5-snmp php5-soap php5-sockets php5-sqlite php5-sysvsem php5-tokenizer php5-wddx php5-xmlrpc php5-xsl php5-zlib php5-exif php5-fastcgi php5-pear php5-sysvmsg php5-sysvshm zip webalizer bash-completion dovecot postfix postfix-mysql bind php5-suhosin
 
 # Generation of random passwords
 password=`passwordgen`;
 postfixpassword=`passwordgen`;
 zadminNewPass=`passwordgen`;
+
+
+echo $password
+echo $postfixpassword
+echo $zadminNewPass
+
+
+chown root:root /tmp
+chmod 1777 /tmp
 
 # Set-up ZPanel directories and configure directory permissions as required.
 mkdir /etc/zpanel
@@ -246,18 +201,31 @@ ln -s /etc/zpanel/panel/bin/setso /usr/bin/setso
 ln -s /etc/zpanel/panel/bin/setzadmin /usr/bin/setzadmin
 chmod +x /etc/zpanel/panel/bin/zppy
 chmod +x /etc/zpanel/panel/bin/setso
-cp -R /etc/zpanel/panel/etc/build/config_packs/ubuntu_12_04/. /etc/zpanel/configs/
+cp -R /etc/zpanel/panel/etc/build/config_packs/ubuntu_12_04/. /etc/zpanel/configs
+## FILES UPDATE ## ZCWORLD
+#ubuntu update on the apache / sql and the default Vhost for ZPX!
+rm -f /etc/zpanel/panel/modules/apache_admin/hooks/OnDaemonRun.hook.php /etc/zpanel/configs/zpanelx-install/sql/zpanel_core.sql /etc/zpanel/configs/apache/httpd.conf
+wget --no-check-certificate https://raw.githubusercontent.com/andykimpe/zpanelx/master/modules/apache_admin/hooks/OnDaemonRun.hook.php_u14 -O /etc/zpanel/panel/modules/apache_admin/hooks/OnDaemonRun.hook.php
+wget --no-check-certificate https://raw.githubusercontent.com/zcworld/zpanelx/master/etc/build/config_packs/ubuntu_12_04/zpanelx-install/sql/zpanel_core.sql -O /etc/zpanel/configs/zpanelx-install/sql/zpanel_core.sql
+# Set server tokens (security??)
+#ServerTokens Major
+wget --no-check-certificate https://github.com/andykimpe/zpanelx/raw/master/etc/build/config_packs/ubuntu_12_04/apache/httpd.conf -O /etc/zpanel/configs/apache/httpd.conf
 # set password after test connexion
 cc -o /etc/zpanel/panel/bin/zsudo /etc/zpanel/configs/bin/zsudo.c
 sudo chown root /etc/zpanel/panel/bin/zsudo
 chmod +s /etc/zpanel/panel/bin/zsudo
 
-# MySQL specific installation tasks...
+
 service mysql start
-mysqladmin -u root password "$password"
+/usr/bin/mysqladmin -u root password $password
+mysqladmin -u root password $password
 until mysql -u root -p$password -e ";" > /dev/null 2>&1 ; do
 read -s -p "enter your root mysql password : " password
 done
+
+
+
+
 sed -i "s|YOUR_ROOT_MYSQL_PASSWORD|$password|" /etc/zpanel/panel/cnf/db.php
 mysql -u root -p$password -e "DROP DATABASE test";
 mysql -u root -p$password -e "DELETE FROM mysql.user WHERE User='root' AND Host != 'localhost'";
@@ -296,7 +264,7 @@ postmap /etc/postfix/transport
 chown -R vacation:vacation /var/spool/vacation
 if ! grep -q "127.0.0.1 autoreply.$fqdn" /etc/hosts; then echo "127.0.0.1 autoreply.$fqdn" >> /etc/hosts; fi
 sed -i "s|myhostname = control.yourdomain.com|myhostname = $fqdn|" /etc/zpanel/configs/postfix/main.cf
-sed -i "s|mydomain = control.yourdomain.com|mydomain   = $fqdn|" /etc/zpanel/configs/postfix/main.cf
+sed -i "s|mydomain = control.yourdomain.com|mydomain = $fqdn|" /etc/zpanel/configs/postfix/main.cf
 rm -rf /etc/postfix/main.cf /etc/postfix/master.cf
 ln -s /etc/zpanel/configs/postfix/master.cf /etc/postfix/master.cf
 ln -s /etc/zpanel/configs/postfix/main.cf /etc/postfix/main.cf
@@ -327,7 +295,7 @@ chmod 660 /var/log/dovecot*
 # ProFTPD specific installation tasks
 groupadd -g 2001 ftpgroup
 useradd -u 2001 -s /bin/false -d /bin/null -c "proftpd user" -g ftpgroup ftpuser
-sed -i "s|#SQLConnectInfo  zpanel_proftpd@localhost root password_here|SQLConnectInfo   zpanel_proftpd@localhost root $password|" /etc/zpanel/configs/proftpd/proftpd-mysql.conf
+sed -i "s|#SQLConnectInfo zpanel_proftpd@localhost root password_here|SQLConnectInfo zpanel_proftpd@localhost root $password|" /etc/zpanel/configs/proftpd/proftpd-mysql.conf
 rm -rf /etc/proftpd/proftpd.conf
 touch /etc/proftpd/proftpd.conf
 if ! grep -q "include /etc/zpanel/configs/proftpd/proftpd-mysql.conf" /etc/proftpd/proftpd.conf; then echo "include /etc/zpanel/configs/proftpd/proftpd-mysql.conf" >> /etc/proftpd/proftpd.conf; fi
@@ -336,8 +304,8 @@ serverhost=`hostname`
 
 # Apache HTTPD specific installation tasks...
 if ! grep -q "Include /etc/zpanel/configs/apache/httpd.conf" /etc/apache2/apache2.conf; then echo "Include /etc/zpanel/configs/apache/httpd.conf" >> /etc/apache2/apache2.conf; fi
-sed -i 's|DocumentRoot "/var/www/html"|DocumentRoot "/etc/zpanel/panel"|' /etc/apache2/apache2.conf
-sed -i 's|Include sites-enabled/||' /etc/apache2/apache2.conf
+sed -i 's|DocumentRoot /var/www/html|DocumentRoot /etc/zpanel/panel|' /etc/apache2/sites-enabled/000-default.conf
+sed -i 's|<Directory /var/www/>|<Directory /etc/zpanel/panel>|' /etc/apache2/apache2.conf
 chown -R www-data:www-data /var/zpanel/temp/
 if ! grep -q "127.0.0.1 "$fqdn /etc/hosts; then echo "127.0.0.1 "$fqdn >> /etc/hosts; fi
 if ! grep -q "apache ALL=NOPASSWD: /etc/zpanel/panel/bin/zsudo" /etc/sudoers; then echo "apache ALL=NOPASSWD: /etc/zpanel/panel/bin/zsudo" >> /etc/sudoers; fi
@@ -403,16 +371,35 @@ ln -s /etc/zpanel/configs/roundcube/main.inc.php /etc/zpanel/panel/etc/apps/webm
 ln -s /etc/zpanel/configs/roundcube/config.inc.php /etc/zpanel/panel/etc/apps/webmail/plugins/managesieve/config.inc.php
 ln -s /etc/zpanel/configs/roundcube/db.inc.php /etc/zpanel/panel/etc/apps/webmail/config/db.inc.php
 
+# enable start service
+chkconfig apache2 on
+chkconfig postfix on
+chkconfig dovecot on
+chkconfig cron on
+chkconfig mysql on
+chkconfig bind on
+chkconfig proftpd on
+chkconfig atd on
+
 # Enable system services and start/restart them as required.
 service apache2 start
 service postfix restart
 service dovecot start
 service cron reload
 service mysql start
-service bind9 start
+service bind start
 service proftpd start
 service atd start
 php /etc/zpanel/panel/bin/daemon.php
+# restart service after daemon
+service apache2 restart
+service postfix restart
+service dovecot restart
+service cron restart
+service mysql restart
+service bind restart
+service proftpd restart
+service atd restart
 
 # We'll now remove the temporary install cache.
 cd ../
@@ -420,28 +407,28 @@ rm -rf zp_install_cache/ zpanelx/
 
 # Advise the user that ZPanel is now installed and accessible.
 echo -e "##############################################################" &>/dev/tty
-echo -e "# Congratulations ZpanelX has now been installed on your     #" &>/dev/tty
-echo -e "# server. Please review the log file left in /root/ for      #" &>/dev/tty
-echo -e "# any errors encountered during installation.                #" &>/dev/tty
-echo -e "#                                                            #" &>/dev/tty
-echo -e "# Save the following information somewhere safe:             #" &>/dev/tty
-echo -e "# MySQL Root Password    : $password" &>/dev/tty
+echo -e "# Congratulations ZpanelX has now been installed on your #" &>/dev/tty
+echo -e "# server. Please review the log file left in /root/ for #" &>/dev/tty
+echo -e "# any errors encountered during installation. #" &>/dev/tty
+echo -e "# #" &>/dev/tty
+echo -e "# Save the following information somewhere safe: #" &>/dev/tty
+echo -e "# MySQL Root Password : $password" &>/dev/tty
 echo -e "# MySQL Postfix Password : $postfixpassword" &>/dev/tty
-echo -e "# ZPanelX Username       : zadmin                            #" &>/dev/tty
-echo -e "# ZPanelX Password       : $zadminNewPass" &>/dev/tty
-echo -e "#                                                            #" &>/dev/tty
-echo -e "# ZPanelX Web login can be accessed using your server IP     #" &>/dev/tty
-echo -e "# inside your web browser.                                   #" &>/dev/tty
-echo -e "#                                                            #" &>/dev/tty
+echo -e "# ZPanelX Username : zadmin #" &>/dev/tty
+echo -e "# ZPanelX Password : $zadminNewPass" &>/dev/tty
+echo -e "# #" &>/dev/tty
+echo -e "# ZPanelX Web login can be accessed using your server IP #" &>/dev/tty
+echo -e "# inside your web browser. #" &>/dev/tty
+echo -e "# #" &>/dev/tty
 echo -e "##############################################################" &>/dev/tty
 echo -e "" &>/dev/tty
 
 # We now request that the user restarts their server...
-read -e -p "Restart your server now to complete the install (y/n)? " rsn
+read -e -p "You Must Restart your server now to complete the install (y/n)? " rsn
 while true; do
-	case $rsn in
-		[Yy]* ) break;;
-		[Nn]* ) exit;
-	esac
+case $rsn in
+[Yy]* ) break;;
+[Nn]* ) exit;
+esac
 done
 shutdown -r now
